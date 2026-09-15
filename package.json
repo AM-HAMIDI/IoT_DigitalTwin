@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "three": "^0.169.0"
+  },
+  "name": "urban-traffic-digital-twin",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "پیاده‌سازی ساده‌ی سیستم دوقلوی دیجیتال ترافیک شهری",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "build-city": "python3 tools/osm_to_city.py",
+    "validate": "node tools/validate.js"
+  }
+}

@@ -1,0 +1,163 @@
+/* ظاهر رابط کاربری — تیره، فشرده، راست‌به‌چپ */
+
+:root {
+  --bg:        #0d1015;
+  --panel:     rgba(18, 22, 29, 0.93);
+  --border:    #262d38;
+  --text:      #dfe5ee;
+  --muted:     #8794a6;
+  --accent:    #4da3ff;
+  --accent-dim:#2b6db3;
+  --good:      #2ecc71;
+  --warn:      #f1c40f;
+  --bad:       #e74c3c;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0; height: 100%;
+  background: var(--bg); color: var(--text);
+  font-family: Vazirmatn, "Segoe UI", Tahoma, sans-serif;
+  font-size: 13px; overflow: hidden;
+}
+
+#view { position: fixed; inset: 0; display: block; }
+
+/* ---------- بارگذاری ---------- */
+#loading {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 18px;
+}
+#loading.hidden { display: none; }
+.spin {
+  width: 42px; height: 42px; border-radius: 50%;
+  border: 3px solid var(--border); border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#loadText { color: var(--muted); }
+
+/* ---------- پنل‌ها ---------- */
+aside {
+  position: fixed; z-index: 10;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  padding: 12px 14px;
+  overflow-y: auto;
+}
+
+#panel { top: 12px; right: 12px; width: 268px; max-height: calc(100vh - 150px); }
+#inspector { top: 12px; left: 12px; width: 250px; max-height: calc(100vh - 150px); }
+
+#panel header h1 { font-size: 14px; margin: 0 0 2px; letter-spacing: -0.2px; }
+#panel header .sub { font-size: 11px; color: var(--muted); margin: 0 0 4px; }
+
+section { border-top: 1px solid var(--border); padding-top: 10px; margin-top: 10px; }
+section:first-of-type { border-top: 0; }
+
+h2 {
+  font-size: 12px; margin: 0 0 8px; color: var(--muted);
+  font-weight: 600; display: flex; align-items: center; gap: 6px;
+}
+.tag {
+  background: var(--accent-dim); color: #fff;
+  font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 700;
+}
+
+.row { display: flex; justify-content: space-between; align-items: baseline; margin: 8px 0 3px; }
+.row span { color: var(--muted); font-size: 12px; }
+.row output { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 12px; }
+
+input[type=range] {
+  width: 100%; -webkit-appearance: none; appearance: none;
+  height: 4px; border-radius: 2px; background: var(--border); outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 13px; height: 13px;
+  border-radius: 50%; background: var(--accent); cursor: pointer;
+}
+input[type=range]::-moz-range-thumb {
+  width: 13px; height: 13px; border: 0;
+  border-radius: 50%; background: var(--accent); cursor: pointer;
+}
+
+.check { display: flex; align-items: center; gap: 7px; margin: 9px 0; cursor: pointer; font-size: 12px; }
+.check input { accent-color: var(--accent); width: 14px; height: 14px; }
+
+.note { font-size: 11px; color: var(--muted); margin: 5px 0 0; line-height: 1.6; }
+.note b { color: var(--accent); }
+
+.api { display: flex; gap: 5px; margin-top: 9px; }
+.api input { flex: 1; min-width: 0; }
+
+input[type=text] {
+  background: #0f1319; border: 1px solid var(--border); color: var(--text);
+  border-radius: 6px; padding: 5px 8px; font-size: 11px;
+  font-family: inherit; outline: none;
+}
+input[type=text]:focus { border-color: var(--accent-dim); }
+
+button {
+  background: var(--accent-dim); color: #fff; border: 0;
+  border-radius: 6px; padding: 6px 10px; font-size: 11px;
+  font-family: inherit; cursor: pointer; white-space: nowrap;
+}
+button:hover { background: var(--accent); }
+button:disabled { background: var(--border); color: var(--muted); cursor: default; }
+button.wide { width: 100%; margin-bottom: 6px; }
+
+/* ---------- بازرسی ---------- */
+.search { display: flex; gap: 5px; margin-bottom: 10px; }
+.search input { flex: 1; min-width: 0; }
+.hint { color: var(--muted); font-size: 11px; line-height: 1.7; }
+
+.kv { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid #1b212b; }
+.kv span { color: var(--muted); font-size: 11px; }
+.kv b { font-size: 11px; font-variant-numeric: tabular-nums; }
+.title { font-size: 13px; font-weight: 700; margin: 0 0 8px; color: var(--accent); }
+.badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; color: #06110a; }
+
+/* ---------- داشبورد ---------- */
+#dash {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+  display: flex; gap: 0; flex-wrap: wrap;
+  background: var(--panel); border-top: 1px solid var(--border);
+  backdrop-filter: blur(8px); padding: 7px 10px;
+}
+.cell { flex: 1 1 96px; padding: 0 9px; border-left: 1px solid var(--border); min-width: 0; }
+.cell:last-child { border-left: 0; }
+.cell label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 1px; }
+.cell b { font-size: 14px; font-variant-numeric: tabular-nums; }
+
+#hintbar {
+  position: fixed; bottom: 68px; left: 50%; transform: translateX(-50%);
+  z-index: 9; color: var(--muted); font-size: 11px;
+  background: rgba(13,16,21,0.8); padding: 4px 12px; border-radius: 20px;
+}
+
+/* ---------- خروجی آزمون ---------- */
+#benchOut { margin-top: 8px; font-size: 11px; }
+#benchOut table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+#benchOut th, #benchOut td { padding: 3px 4px; text-align: right; border-bottom: 1px solid #1b212b; }
+#benchOut th { color: var(--muted); font-weight: 600; font-size: 10px; }
+#benchOut td { font-size: 11px; }
+.prog { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin: 6px 0; }
+.prog i { display: block; height: 100%; background: var(--accent); width: 0; transition: width 0.2s; }
+
+@media (max-width: 900px) {
+  #inspector { display: none; }
+  #panel { width: 232px; }
+  #hintbar { display: none; }
+}
+
+/* نوار خطا */
+#errbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  background: var(--bad); color: #fff;
+  padding: 7px 14px; font-size: 12px; direction: ltr; text-align: left;
+}

@@ -1,0 +1,8 @@
+[out:json][timeout:60];
+(
+  way["building"](51.5100,-0.1080,51.5220,-0.0750);
+  way["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential|unclassified|living_street)$"](51.5100,-0.1080,51.5220,-0.0750);
+);
+out body;
+>;
+out skel qt;

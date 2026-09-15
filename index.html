@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>دوقلوی دیجیتال ترافیک شهری — City of London</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js" } }
+</script>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spin"></div>
+  <div id="loadText">در حال ساخت صحنه…</div>
+</div>
+
+<canvas id="view"></canvas>
+
+<!-- نوار خطا: اگر جایی از برنامه خطا بدهد، به‌جای سکوت اینجا نشان داده می‌شود -->
+<div id="errbar" hidden></div>
+<script>
+window.addEventListener('error', e => {
+  const bar = document.getElementById('errbar');
+  bar.hidden = false;
+  bar.textContent = 'خطا: ' + (e.message || e) + ' @ ' + (e.filename || '').split('/').pop() + ':' + e.lineno;
+});
+window.addEventListener('unhandledrejection', e => {
+  const bar = document.getElementById('errbar');
+  bar.hidden = false;
+  bar.textContent = 'خطای ناهمگام: ' + (e.reason?.message || e.reason);
+});
+</script>
+
+<!-- ─────────── پنل کنترل (لایه ۲ و ۳) ─────────── -->
+<aside id="panel">
+  <header>
+    <h1>دوقلوی دیجیتال ترافیک شهری</h1>
+    <p class="sub">City of London · داده‌ی واقعی OpenStreetMap</p>
+  </header>
+
+  <section>
+    <h2><span class="tag">لایه ۳</span> تولید مفهوم</h2>
+
+    <label class="row">
+      <span>تعداد خودرو</span>
+      <output id="outVeh">150</output>
+    </label>
+    <input type="range" id="vehCount" min="0" max="1500" step="10" value="150">
+
+    <label class="row">
+      <span>تقاضای سفر</span>
+      <output id="outDemand">۱.۰×</output>
+    </label>
+    <input type="range" id="demand" min="0.2" max="2" step="0.1" value="1">
+
+    <label class="check">
+      <input type="checkbox" id="lodOn" checked>
+      <span>راهبرد تطبیقی سطح جزئیات (LOD)</span>
+    </label>
+    <label class="check">
+      <input type="checkbox" id="showPaths">
+      <span>نمایش مسیر اسپلاین خودروها</span>
+    </label>
+  </section>
+
+  <section>
+    <h2><span class="tag">لایه ۲</span> اکتساب داده</h2>
+
+    <label class="row">
+      <span>ساعت روز</span>
+      <output id="outHour">۱۳:۰۰</output>
+    </label>
+    <input type="range" id="hour" min="0" max="23.9" step="0.1" value="13">
+
+    <label class="row">
+      <span>شدت بارش</span>
+      <output id="outRain">۰ mm/h</output>
+    </label>
+    <input type="range" id="rain" min="0" max="12" step="0.5" value="0">
+    <p class="note" id="rainNote">ذرات باران = شدت × ۸۰ → <b>۰</b></p>
+
+    <label class="row">
+      <span>سرعت باد</span>
+      <output id="outWind">۳ m/s</output>
+    </label>
+    <input type="range" id="wind" min="0" max="20" step="0.5" value="3">
+
+    <label class="check">
+      <input type="checkbox" id="trafficColors" checked>
+      <span>رنگ‌آمیزی ازدحام روی جاده</span>
+    </label>
+
+    <div class="api">
+      <input type="text" id="owmKey" placeholder="کلید OpenWeatherMap (اختیاری)">
+      <button id="fetchWeather">دریافت زنده</button>
+    </div>
+    <p class="note" id="weatherSrc">منبع داده: شبیه‌سازی‌شده</p>
+  </section>
+
+  <section>
+    <h2>اعتبارسنجی</h2>
+    <button class="wide" id="runBench">اجرای آزمون کارایی</button>
+    <button class="wide" id="runAccuracy">آزمون دقت: خطی در برابر غیرخطی</button>
+    <div id="benchOut"></div>
+  </section>
+</aside>
+
+<!-- ─────────── پنل بازرسی ─────────── -->
+<aside id="inspector">
+  <h2>بازرسی</h2>
+  <div class="search">
+    <input type="text" id="typeSearch" placeholder="جست‌وجوی TypeID مثلاً BusID-7">
+    <button id="doSearch">یافتن</button>
+  </div>
+  <div id="inspectBody">
+    <p class="hint">روی جاده، ساختمان یا خودرو کلیک کنید تا اطلاعات لحظه‌ای آن نمایش داده شود.</p>
+  </div>
+</aside>
+
+<!-- ─────────── داشبورد پایین ─────────── -->
+<footer id="dash">
+  <div class="cell"><label>نرخ فریم</label><b id="dFps">—</b></div>
+  <div class="cell"><label>خودروی فعال</label><b id="dVeh">—</b></div>
+  <div class="cell"><label>زمان فیزیک/فریم</label><b id="dPhys">—</b></div>
+  <div class="cell"><label>سرعت متوسط</label><b id="dSpeed">—</b></div>
+  <div class="cell"><label>خطای مسیر</label><b id="dErr">—</b></div>
+  <div class="cell"><label>خودروی سرویس‌شده</label><b id="dServed">—</b></div>
+  <div class="cell"><label>مسافت تجمعی</label><b id="dDist">—</b></div>
+  <div class="cell"><label>نرخ ازدحام</label><b id="dJam">—</b></div>
+  <div class="cell"><label>طول شبکه</label><b id="dRoad">—</b></div>
+  <div class="cell"><label>سطح جزئیات</label><b id="dLod">—</b></div>
+</footer>
+
+<div id="hintbar">چرخش: کشیدن با ماوس · بزرگ‌نمایی: اسکرول · جابه‌جایی: کلیک راست</div>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
