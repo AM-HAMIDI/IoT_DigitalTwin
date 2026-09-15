@@ -1,6 +1,6 @@
 #!/bin/sh
-# اجرای پروژه روی سرور محلی
-# استفاده:  ./serve.sh  [پورت]
+# Local server execution script
+# Usage: ./serve.sh [PORT]
 PORT="${1:-8080}"
-echo "پروژه روی http://localhost:$PORT در حال اجراست  (برای توقف: Ctrl+C)"
+echo "Digital Twin Simulation running at http://localhost:$PORT (Press Ctrl+C to stop)"
 exec python3 -m http.server "$PORT"

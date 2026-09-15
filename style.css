@@ -1,4 +1,4 @@
-/* ظاهر رابط کاربری — تیره، فشرده، راست‌به‌چپ */
+/* UI Styling — Dark, Compact, LTR */
 
 :root {
   --bg:        #0d1015;
@@ -18,13 +18,13 @@
 html, body {
   margin: 0; padding: 0; height: 100%;
   background: var(--bg); color: var(--text);
-  font-family: Vazirmatn, "Segoe UI", Tahoma, sans-serif;
-  font-size: 13px; overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px; overflow: hidden; direction: ltr;
 }
 
 #view { position: fixed; inset: 0; display: block; }
 
-/* ---------- بارگذاری ---------- */
+/* ---------- Loading ---------- */
 #loading {
   position: fixed; inset: 0; z-index: 100;
   background: var(--bg);
@@ -40,7 +40,7 @@ html, body {
 @keyframes spin { to { transform: rotate(360deg); } }
 #loadText { color: var(--muted); }
 
-/* ---------- پنل‌ها ---------- */
+/* ---------- Panels ---------- */
 aside {
   position: fixed; z-index: 10;
   background: var(--panel);
@@ -51,8 +51,8 @@ aside {
   overflow-y: auto;
 }
 
-#panel { top: 12px; right: 12px; width: 268px; max-height: calc(100vh - 150px); }
-#inspector { top: 12px; left: 12px; width: 250px; max-height: calc(100vh - 150px); }
+#panel { top: 12px; right: 12px; width: 280px; max-height: calc(100vh - 150px); }
+#inspector { top: 12px; left: 12px; width: 260px; max-height: calc(100vh - 150px); }
 
 #panel header h1 { font-size: 14px; margin: 0 0 2px; letter-spacing: -0.2px; }
 #panel header .sub { font-size: 11px; color: var(--muted); margin: 0 0 4px; }
@@ -87,7 +87,7 @@ input[type=range]::-moz-range-thumb {
 }
 
 .check { display: flex; align-items: center; gap: 7px; margin: 9px 0; cursor: pointer; font-size: 12px; }
-.check input { accent-color: var(--accent); width: 14px; height: 14px; }
+.check input { accent-color: var(--accent); width: 14px; height: 14px; margin: 0; }
 
 .note { font-size: 11px; color: var(--muted); margin: 5px 0 0; line-height: 1.6; }
 .note b { color: var(--accent); }
@@ -111,7 +111,7 @@ button:hover { background: var(--accent); }
 button:disabled { background: var(--border); color: var(--muted); cursor: default; }
 button.wide { width: 100%; margin-bottom: 6px; }
 
-/* ---------- بازرسی ---------- */
+/* ---------- Inspector ---------- */
 .search { display: flex; gap: 5px; margin-bottom: 10px; }
 .search input { flex: 1; min-width: 0; }
 .hint { color: var(--muted); font-size: 11px; line-height: 1.7; }
@@ -122,7 +122,7 @@ button.wide { width: 100%; margin-bottom: 6px; }
 .title { font-size: 13px; font-weight: 700; margin: 0 0 8px; color: var(--accent); }
 .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; color: #06110a; }
 
-/* ---------- داشبورد ---------- */
+/* ---------- Dashboard ---------- */
 #dash {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
   display: flex; gap: 0; flex-wrap: wrap;
@@ -130,8 +130,8 @@ button.wide { width: 100%; margin-bottom: 6px; }
   backdrop-filter: blur(8px); padding: 7px 10px;
 }
 .cell { flex: 1 1 96px; padding: 0 9px; border-left: 1px solid var(--border); min-width: 0; }
-.cell:last-child { border-left: 0; }
-.cell label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 1px; }
+.cell:first-child { border-left: 0; }
+.cell label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 1px; text-transform: uppercase; }
 .cell b { font-size: 14px; font-variant-numeric: tabular-nums; }
 
 #hintbar {
@@ -140,11 +140,11 @@ button.wide { width: 100%; margin-bottom: 6px; }
   background: rgba(13,16,21,0.8); padding: 4px 12px; border-radius: 20px;
 }
 
-/* ---------- خروجی آزمون ---------- */
+/* ---------- Benchmark Output ---------- */
 #benchOut { margin-top: 8px; font-size: 11px; }
 #benchOut table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 #benchOut th, #benchOut td { padding: 3px 4px; text-align: right; border-bottom: 1px solid #1b212b; }
-#benchOut th { color: var(--muted); font-weight: 600; font-size: 10px; }
+#benchOut th { color: var(--muted); font-weight: 600; font-size: 10px; text-transform: uppercase;}
 #benchOut td { font-size: 11px; }
 .prog { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin: 6px 0; }
 .prog i { display: block; height: 100%; background: var(--accent); width: 0; transition: width 0.2s; }
@@ -155,9 +155,9 @@ button.wide { width: 100%; margin-bottom: 6px; }
   #hintbar { display: none; }
 }
 
-/* نوار خطا */
+/* Error Bar */
 #errbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 200;
   background: var(--bad); color: #fff;
-  padding: 7px 14px; font-size: 12px; direction: ltr; text-align: left;
+  padding: 7px 14px; font-size: 12px; text-align: left;
 }

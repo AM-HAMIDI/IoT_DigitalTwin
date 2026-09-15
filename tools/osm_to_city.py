@@ -1,57 +1,48 @@
 #!/usr/bin/env python3
 """
-لایه ۱ سیستم (System Construction Layer)
+Custom GIS to 3D Geometry Pipeline
 --------------------------------------------------
-معادل ساده‌شده‌ی خط لوله‌ی BlenderGIS + CityEngine در پیپر.
+This script extracts raw OpenStreetMap data and procedurally generates a lightweight 
+3D environment optimized for web-based real-time rendering.
 
-پیپر چه می‌کند:
-  OpenStreetMap --(BlenderGIS)--> مش ساختمان و زمین در Blender
-                --(CityEngine + قواعد CGA)--> جاده‌ی پارامتریک با
-                  attr NbrOfLanes و attr MaterialCode
-
-این اسکریپت چه می‌کند:
-  OpenStreetMap --(همین فایل)--> چندضلعی پای ساختمان + ارتفاع
-                              --> خط مرکزی جاده + تعداد لِین + کد متریال
-  خروجی یک فایل JSON است که مرورگر مستقیم می‌خواند.
-
-اجرا:  python3 tools/osm_to_city.py
+Workflow:
+  OSM Raw Data -> Base polygons + Height extraction
+               -> Centerline road topologies + Lane counts + Material metadata
+  Output: A unified JSON payload consumed directly by the SceneGenerator.
 """
 import json, math, os
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC  = os.path.join(HERE, "data", "osm_raw.json")
-DST  = os.path.join(HERE, "data", "city_london.json")
+DST  = os.path.join(HERE, "data", "simulation_environment.json") # Renamed for generic application
 
-# مرکز منطقه‌ی City of London (همان منطقه‌ای که پیپر انتخاب کرده: ۲.۶ کیلومتر مربع)
+# Center of the study area (City of London bounds)
 LAT0, LON0 = 51.5160, -0.0915
 
-# تعداد لِین پیش‌فرض بر اساس نوع جاده — معادل «attr NbrOfLanes» در قواعد CGA پیپر
+# Default lane assignments based on highway classification
 DEFAULT_LANES = {
     "motorway": 3, "trunk": 3, "primary": 2, "secondary": 2,
     "tertiary": 2, "residential": 1, "unclassified": 1, "living_street": 1,
 }
-# عرض هر لِین بر حسب متر
 LANE_WIDTH = 3.5
-# اولویت جاده برای ترسیم و تولید ترافیک (هرچه بیشتر، شریان اصلی‌تر)
+
+# Routing hierarchy for traffic generation weights
 ROAD_RANK = {
     "motorway": 5, "trunk": 5, "primary": 4, "secondary": 3,
     "tertiary": 2, "residential": 1, "unclassified": 1, "living_street": 1,
 }
 
-
 def project(lat, lon):
     """
-    تصویر مسطح محلی (equirectangular) حول مرکز صحنه.
-    مختصات جغرافیایی (درجه) -> مختصات متری محلی (x = شرق، z = شمال).
-    برای منطقه‌ای به ابعاد چند کیلومتر خطای این تصویر ناچیز است.
+    Equirectangular local projection around the scene center.
+    Converts geographic coordinates (degrees) to local metric coordinates (x = East, z = North).
     """
     x = (lon - LON0) * 111320.0 * math.cos(math.radians(LAT0))
     z = (lat - LAT0) * 110540.0
     return x, z
 
-
 def parse_height(tags):
-    """ارتفاع ساختمان را از تگ‌های OSM استخراج می‌کند (متر)."""
+    """Extracts building height from OSM tags in meters."""
     h = tags.get("height") or tags.get("building:height")
     if h:
         try:
@@ -61,15 +52,13 @@ def parse_height(tags):
     levels = tags.get("building:levels")
     if levels:
         try:
-            # ارتفاع متوسط هر طبقه ۳.۲ متر
             return max(3.0, float(str(levels).split(";")[0]) * 3.2)
         except ValueError:
             pass
-    return 12.0  # پیش‌فرض برای ساختمانی که هیچ اطلاع ارتفاعی ندارد
-
+    return 12.0 
 
 def signed_area(poly):
-    """مساحت علامت‌دار چندضلعی — هم برای فیلتر کردن و هم برای تشخیص جهت."""
+    """Calculates signed area of a polygon to determine vertex winding order."""
     s = 0.0
     for i in range(len(poly)):
         x1, z1 = poly[i]
@@ -77,12 +66,10 @@ def signed_area(poly):
         s += x1 * z2 - x2 * z1
     return s / 2.0
 
-
 def simplify(points, tol=0.6):
     """
-    ساده‌سازی Douglas–Peucker.
-    معادل مرحله‌ی «mesh simplification / proxy geometry» در پیپر:
-    تعداد رأس‌ها را کم می‌کند تا رندر بلادرنگ ممکن شود.
+    Douglas-Peucker simplification algorithm.
+    Reduces vertex count to ensure the generated meshes can be rendered at 60FPS.
     """
     if len(points) < 3:
         return points
@@ -109,7 +96,6 @@ def simplify(points, tol=0.6):
 
     return rdp(points)
 
-
 def main():
     with open(SRC, encoding="utf-8") as f:
         osm = json.load(f)
@@ -117,10 +103,7 @@ def main():
     nodes = {e["id"]: (e["lat"], e["lon"]) for e in osm["elements"] if e["type"] == "node"}
     ways = [e for e in osm["elements"] if e["type"] == "way"]
 
-    # --- شناسایی گره‌های تقاطع ---
-    # گره‌ای که بیش از یک خیابان به آن ارجاع می‌دهد، یک تقاطع واقعی است.
-    # این گره‌ها نباید در ساده‌سازی حذف شوند، وگرنه شبکه‌ی جاده از هم می‌پاشد
-    # و خودرو نمی‌تواند از خیابانی به خیابان دیگر برود.
+    # --- Identify Intersection Nodes ---
     ref_count = {}
     for w in ways:
         if "highway" not in w.get("tags", {}):
@@ -128,7 +111,7 @@ def main():
         for n in set(w.get("nodes", [])):
             ref_count[n] = ref_count.get(n, 0) + 1
     junctions = {n for n, c in ref_count.items() if c >= 2}
-    print(f"تقاطع  : {len(junctions)} گره مشترک شناسایی شد")
+    print(f"Intersections: {len(junctions)} shared nodes identified")
 
     buildings, roads = [], []
     minx = minz = 1e18
@@ -147,17 +130,16 @@ def main():
             minz, maxz = min(minz, z), max(maxz, z)
 
         if "building" in tags:
-            ring = pts[:-1] if pts[0] == pts[-1] else pts        # حلقه‌ی بسته را باز می‌کنیم
+            ring = pts[:-1] if pts[0] == pts[-1] else pts        
             ring = simplify(ring, tol=0.6)
-            if len(ring) < 3 or abs(signed_area(ring)) < 12.0:   # ساختمان‌های ریز حذف می‌شوند
+            if len(ring) < 3 or abs(signed_area(ring)) < 12.0:   
                 continue
-            if signed_area(ring) < 0:                            # جهت را خلاف عقربه یکنواخت می‌کنیم
+            if signed_area(ring) < 0:                            
                 ring.reverse()
             buildings.append({
                 "id": w["id"],
                 "name": tags.get("name", ""),
                 "h": round(parse_height(tags), 1),
-                # MaterialCode — معادل همان فراداده‌ی BIM که پیپر به عناصر GIS تزریق می‌کند
                 "mat": tags.get("building:material", tags.get("building", "yes")),
                 "poly": [[round(x, 2), round(z, 2)] for x, z in ring],
             })
@@ -168,9 +150,7 @@ def main():
                 lanes = int(str(tags.get("lanes", "")).split(";")[0])
             except ValueError:
                 lanes = DEFAULT_LANES.get(hw, 1)
-            # ساده‌سازی تکه‌تکه: خط را در تقاطع‌ها می‌بریم، هر تکه را جداگانه
-            # ساده می‌کنیم و دوباره به هم می‌چسبانیم. نتیجه: تعداد رأس کم می‌شود
-            # ولی نقاط تقاطع دست‌نخورده باقی می‌مانند.
+            
             valid_refs = [n for n in refs if n in nodes]
             cut = [0] + [i for i in range(1, len(pts) - 1)
                          if valid_refs[i] in junctions] + [len(pts) - 1]
@@ -181,8 +161,7 @@ def main():
             if len(line) < 2:
                 continue
             length = sum(math.dist(line[i], line[i + 1]) for i in range(len(line) - 1))
-            if length < 3.0:           # فقط قطعه‌های بی‌معنی حذف شوند؛ قطعه‌های کوتاه
-                                       # اغلب رابط تقاطع‌اند و حذفشان شبکه را پاره می‌کند
+            if length < 3.0:           
                 continue
             roads.append({
                 "id": w["id"],
@@ -214,11 +193,10 @@ def main():
         json.dump(out, f, separators=(",", ":"))
 
     total_len = sum(r["len"] for r in roads)
-    print(f"ساختمان : {len(buildings)}")
-    print(f"جاده    : {len(roads)}  (مجموع طول {total_len / 1000:.1f} کیلومتر)")
-    print(f"محدوده  : {maxx - minx:.0f} m x {maxz - minz:.0f} m")
-    print(f"خروجی   : {DST}  ({os.path.getsize(DST) / 1024:.0f} KB)")
-
+    print(f"Buildings : {len(buildings)}")
+    print(f"Roads     : {len(roads)}  (Total length {total_len / 1000:.1f} km)")
+    print(f"Bounds    : {maxx - minx:.0f} m x {maxz - minz:.0f} m")
+    print(f"Output    : {DST}  ({os.path.getsize(DST) / 1024:.0f} KB)")
 
 if __name__ == "__main__":
     main()

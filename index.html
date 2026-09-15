@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>دوقلوی دیجیتال ترافیک شهری — City of London</title>
+<title>Urban Traffic Digital Twin — Validation Model</title>
 <link rel="stylesheet" href="style.css">
 <script type="importmap">
 { "imports": { "three": "./vendor/three.module.js" } }
@@ -13,127 +13,127 @@
 
 <div id="loading">
   <div class="spin"></div>
-  <div id="loadText">در حال ساخت صحنه…</div>
+  <div id="loadText">Generating 3D Environment...</div>
 </div>
 
 <canvas id="view"></canvas>
 
-<!-- نوار خطا: اگر جایی از برنامه خطا بدهد، به‌جای سکوت اینجا نشان داده می‌شود -->
+<!-- Error Bar -->
 <div id="errbar" hidden></div>
 <script>
 window.addEventListener('error', e => {
   const bar = document.getElementById('errbar');
   bar.hidden = false;
-  bar.textContent = 'خطا: ' + (e.message || e) + ' @ ' + (e.filename || '').split('/').pop() + ':' + e.lineno;
+  bar.textContent = 'Error: ' + (e.message || e) + ' @ ' + (e.filename || '').split('/').pop() + ':' + e.lineno;
 });
 window.addEventListener('unhandledrejection', e => {
   const bar = document.getElementById('errbar');
   bar.hidden = false;
-  bar.textContent = 'خطای ناهمگام: ' + (e.reason?.message || e.reason);
+  bar.textContent = 'Async Error: ' + (e.reason?.message || e.reason);
 });
 </script>
 
-<!-- ─────────── پنل کنترل (لایه ۲ و ۳) ─────────── -->
+<!-- Control Panel -->
 <aside id="panel">
   <header>
-    <h1>دوقلوی دیجیتال ترافیک شهری</h1>
-    <p class="sub">City of London · داده‌ی واقعی OpenStreetMap</p>
+    <h1>Urban Traffic Digital Twin</h1>
+    <p class="sub">Simulation Environment · Extracted OSM Data</p>
   </header>
 
   <section>
-    <h2><span class="tag">لایه ۳</span> تولید مفهوم</h2>
+    <h2><span class="tag">Layer 3</span> Concept Generation</h2>
 
     <label class="row">
-      <span>تعداد خودرو</span>
+      <span>Concurrent Vehicles</span>
       <output id="outVeh">150</output>
     </label>
     <input type="range" id="vehCount" min="0" max="1500" step="10" value="150">
 
     <label class="row">
-      <span>تقاضای سفر</span>
-      <output id="outDemand">۱.۰×</output>
+      <span>Traffic Demand</span>
+      <output id="outDemand">1.0×</output>
     </label>
     <input type="range" id="demand" min="0.2" max="2" step="0.1" value="1">
 
     <label class="check">
       <input type="checkbox" id="lodOn" checked>
-      <span>راهبرد تطبیقی سطح جزئیات (LOD)</span>
+      <span>Adaptive Level of Detail (LOD)</span>
     </label>
     <label class="check">
       <input type="checkbox" id="showPaths">
-      <span>نمایش مسیر اسپلاین خودروها</span>
+      <span>Visualize Trajectory Splines</span>
     </label>
   </section>
 
   <section>
-    <h2><span class="tag">لایه ۲</span> اکتساب داده</h2>
+    <h2><span class="tag">Layer 2</span> Data Acquisition</h2>
 
     <label class="row">
-      <span>ساعت روز</span>
-      <output id="outHour">۱۳:۰۰</output>
+      <span>Time of Day</span>
+      <output id="outHour">13:00</output>
     </label>
     <input type="range" id="hour" min="0" max="23.9" step="0.1" value="13">
 
     <label class="row">
-      <span>شدت بارش</span>
-      <output id="outRain">۰ mm/h</output>
+      <span>Precipitation Intensity</span>
+      <output id="outRain">0 mm/h</output>
     </label>
     <input type="range" id="rain" min="0" max="12" step="0.5" value="0">
-    <p class="note" id="rainNote">ذرات باران = شدت × ۸۰ → <b>۰</b></p>
+    <p class="note" id="rainNote">Particle Emission = Intensity × 80 → <b>0</b></p>
 
     <label class="row">
-      <span>سرعت باد</span>
-      <output id="outWind">۳ m/s</output>
+      <span>Wind Speed</span>
+      <output id="outWind">3 m/s</output>
     </label>
     <input type="range" id="wind" min="0" max="20" step="0.5" value="3">
 
     <label class="check">
       <input type="checkbox" id="trafficColors" checked>
-      <span>رنگ‌آمیزی ازدحام روی جاده</span>
+      <span>Dynamic Congestion Coloration</span>
     </label>
 
     <div class="api">
-      <input type="text" id="owmKey" placeholder="کلید OpenWeatherMap (اختیاری)">
-      <button id="fetchWeather">دریافت زنده</button>
+      <input type="text" id="owmKey" placeholder="OpenWeatherMap Key (Optional)">
+      <button id="fetchWeather">Fetch Live API</button>
     </div>
-    <p class="note" id="weatherSrc">منبع داده: شبیه‌سازی‌شده</p>
+    <p class="note" id="weatherSrc">Data Source: Local Simulation</p>
   </section>
 
   <section>
-    <h2>اعتبارسنجی</h2>
-    <button class="wide" id="runBench">اجرای آزمون کارایی</button>
-    <button class="wide" id="runAccuracy">آزمون دقت: خطی در برابر غیرخطی</button>
+    <h2>System Validation</h2>
+    <button class="wide" id="runBench">Run Computational Benchmark</button>
+    <button class="wide" id="runAccuracy">Physical Accuracy Validation (Linear vs Non-Linear)</button>
     <div id="benchOut"></div>
   </section>
 </aside>
 
-<!-- ─────────── پنل بازرسی ─────────── -->
+<!-- Inspector Panel -->
 <aside id="inspector">
-  <h2>بازرسی</h2>
+  <h2>Data Inspector</h2>
   <div class="search">
-    <input type="text" id="typeSearch" placeholder="جست‌وجوی TypeID مثلاً BusID-7">
-    <button id="doSearch">یافتن</button>
+    <input type="text" id="typeSearch" placeholder="Search TypeID (e.g., BusID-7)">
+    <button id="doSearch">Focus</button>
   </div>
   <div id="inspectBody">
-    <p class="hint">روی جاده، ساختمان یا خودرو کلیک کنید تا اطلاعات لحظه‌ای آن نمایش داده شود.</p>
+    <p class="hint">Click on any vehicle, road segment, or building footprint to view real-time data.</p>
   </div>
 </aside>
 
-<!-- ─────────── داشبورد پایین ─────────── -->
+<!-- Bottom Dashboard -->
 <footer id="dash">
-  <div class="cell"><label>نرخ فریم</label><b id="dFps">—</b></div>
-  <div class="cell"><label>خودروی فعال</label><b id="dVeh">—</b></div>
-  <div class="cell"><label>زمان فیزیک/فریم</label><b id="dPhys">—</b></div>
-  <div class="cell"><label>سرعت متوسط</label><b id="dSpeed">—</b></div>
-  <div class="cell"><label>خطای مسیر</label><b id="dErr">—</b></div>
-  <div class="cell"><label>خودروی سرویس‌شده</label><b id="dServed">—</b></div>
-  <div class="cell"><label>مسافت تجمعی</label><b id="dDist">—</b></div>
-  <div class="cell"><label>نرخ ازدحام</label><b id="dJam">—</b></div>
-  <div class="cell"><label>طول شبکه</label><b id="dRoad">—</b></div>
-  <div class="cell"><label>سطح جزئیات</label><b id="dLod">—</b></div>
+  <div class="cell"><label>FPS</label><b id="dFps">—</b></div>
+  <div class="cell"><label>Active Vehicles</label><b id="dVeh">—</b></div>
+  <div class="cell"><label>Physics/Step</label><b id="dPhys">—</b></div>
+  <div class="cell"><label>Avg Speed</label><b id="dSpeed">—</b></div>
+  <div class="cell"><label>Tracking Error</label><b id="dErr">—</b></div>
+  <div class="cell"><label>Tasks Completed</label><b id="dServed">—</b></div>
+  <div class="cell"><label>Total Distance</label><b id="dDist">—</b></div>
+  <div class="cell"><label>Congestion Rate</label><b id="dJam">—</b></div>
+  <div class="cell"><label>Network Length</label><b id="dRoad">—</b></div>
+  <div class="cell"><label>LOD Ratio</label><b id="dLod">—</b></div>
 </footer>
 
-<div id="hintbar">چرخش: کشیدن با ماوس · بزرگ‌نمایی: اسکرول · جابه‌جایی: کلیک راست</div>
+<div id="hintbar">Rotate: Left Click + Drag · Zoom: Scroll · Pan: Right Click + Drag</div>
 
 <script type="module" src="src/main.js"></script>
 </body>
